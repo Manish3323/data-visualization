@@ -1,14 +1,18 @@
 from collections import defaultdict
-from curses.textpad import rectangle
-from http.client import NOT_IMPLEMENTED
-from plotnine import ggplot, aes, geom_point
-import csv
-import pandas as pd
 import matplotlib.pyplot as plt
-plt.style.use('ggplot')
+from matplotlib import animation
+import pandas as pd
+import csv
+font = {
+    'weight': 'normal',
+    'size'  :  20,
+    'color': 'black'
+}
 rows = []
-data = []
+color_data = []
+user_data = []
 headers = [
+  "Time",
   "#FF4500",
   "#51E9F4",
   "#000000",
@@ -34,13 +38,13 @@ headers = [
   "#009EAA",
   "#00756F"
   ]
-  
-with open("./place_5.csv", 'r') as file:
+
+with open("../../place_1.csv", 'r') as file:
   color_freq = defaultdict(int)
-  for k in headers:
+  for k in headers[1:]:
     color_freq[k] = 0
   csvreader = csv.reader(file)
-  header = next(csvreader)
+  next(csvreader) #ignore first line
   for row in csvreader:
     date = row[0]
     color = row[2]
@@ -48,11 +52,24 @@ with open("./place_5.csv", 'r') as file:
     d = [date]
     for color in color_freq: 
       d.append(color_freq[color])
-    data.append(d)
+    color_data.append(d)
 
-headers.insert(0, 'Time')
-df = pd.DataFrame(data, columns = headers)
-# data looks like this : 👇🏻
-print(df)
-g = ggplot(df, aes(x="Time")) + geom_point()
-# print(g) -> this breaks
+color_df = pd.DataFrame(color_data, columns = headers)
+
+
+# this plots the number of times a color got used till that moment.
+time = color_df['Time'].unique()
+
+fig, ax = plt.subplots(figsize=(10, 5))
+def update_barchart(i):
+  _time = time[10000 * i]
+  data_temp = color_df.loc[color_df['Time'] == _time, :]
+  ax.clear()
+  ax.set_xlabel(f'Count {_time}')
+  for color_key in headers[1:]:
+    ax.barh(color_key, data_temp[color_key], color = color_key)
+    ax.set_facecolor('grey')
+
+anim = animation.FuncAnimation(fig, update_barchart, frames = round(len(time) / 10000))
+plt.show()
+# anim.save('anim.gif')
